@@ -88,7 +88,7 @@ npm start
 
 ## 🐳 Docker
 
-### Збірка Docker-образу
+### 1. Збірка власного Docker-образу
 
 ```bash
 docker build -t your_dockerhub_username/movies .
@@ -110,6 +110,14 @@ docker run --name movies -p 8000:8050 -e APP_PORT=8050 your_dockerhub_username/m
 Після запуску сервер буде доступний на `http://localhost:8000`.
 
 ---
+
+### 2. Запуск вже створеного мого образу
+
+```bash
+docker run --name movies -p 8000:8050 -e APP_PORT=8050 f1lzters/movies
+```
+
+Після запуску сервер буде доступний на `http://localhost:8000`.
 
 ## 📋 API
 
