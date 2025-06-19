@@ -1,6 +1,6 @@
 import { Movie } from "../models/movieModel.js";
 import { Actor } from "../models/actorModel.js";
-import { Op } from "sequelize";
+import { Op, fn, col, where as sequelizeWhere } from "sequelize";
 import ApiError from "../utils/apiError.js";
 
 class MovieService {
@@ -149,20 +149,36 @@ class MovieService {
     limit = 20,
     offset = 0,
   }) {
-    const where = {};
-    const actorWhere = {};
-
-    if (actor) {
-      actorWhere.name = { [Op.iLike]: `%${actor}%` };
-    }
+    const whereConditions = [];
+    const actorConditions = [];
 
     if (title) {
-      where.title = { [Op.iLike]: `%${title}%` };
+      whereConditions.push(
+        sequelizeWhere(fn("LOWER", col("title")), {
+          [Op.like]: `%${title.toLowerCase()}%`,
+        })
+      );
     }
 
     if (search) {
-      where.title = { [Op.iLike]: `%${search}%` };
-      actorWhere.name = { [Op.iLike]: `%${search}%` };
+      whereConditions.push(
+        sequelizeWhere(fn("LOWER", col("title")), {
+          [Op.like]: `%${search.toLowerCase()}%`,
+        })
+      );
+      actorConditions.push(
+        sequelizeWhere(fn("LOWER", col("name")), {
+          [Op.like]: `%${search.toLowerCase()}%`,
+        })
+      );
+    }
+
+    if (actor) {
+      actorConditions.push(
+        sequelizeWhere(fn("LOWER", col("name")), {
+          [Op.like]: `%${actor.toLowerCase()}%`,
+        })
+      );
     }
 
     const sortFields = ["id", "title", "year"];
@@ -170,31 +186,48 @@ class MovieService {
     const sortOrder = order.toUpperCase() === "DESC" ? "DESC" : "ASC";
 
     const total = await Movie.count({
-      where,
-      include: Object.keys(actorWhere).length
-        ? [{ model: Actor, as: "actors", where: actorWhere }]
+      where: whereConditions.length ? { [Op.and]: whereConditions } : undefined,
+      include: actorConditions.length
+        ? [
+            {
+              model: Actor,
+              as: "actors",
+              where: { [Op.and]: actorConditions },
+            },
+          ]
         : [],
       distinct: true,
     });
 
     const movies = await Movie.findAll({
-      where,
-      include: Object.keys(actorWhere).length
+      where: whereConditions.length ? { [Op.and]: whereConditions } : undefined,
+      include: actorConditions.length
         ? [
             {
               model: Actor,
               as: "actors",
-              where: actorWhere,
+              where: { [Op.and]: actorConditions },
               attributes: ["id", "name"],
               through: { attributes: [] },
               required: true,
             },
           ]
         : [],
-      order: [[sortBy, sortOrder]],
+      order:
+        sortBy === "title"
+          ? [[fn("LOWER", col("title")), sortOrder]]
+          : [[sortBy, sortOrder]],
       limit: parseInt(limit),
       offset: parseInt(offset),
     });
+
+    if (sortBy === "title") {
+      movies.sort(
+        (a, b) =>
+          a.title.localeCompare(b.title, "uk", { sensitivity: "base" }) *
+          (sortOrder === "DESC" ? -1 : 1)
+      );
+    }
 
     return {
       data: movies,

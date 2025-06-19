@@ -1,5 +1,6 @@
-export const MOVIE_FORMAT_TYPES = {
+const MOVIE_FORMAT_TYPES = {
   VHS: "VHS",
   DVD: "DVD",
-  BluRay: "Blu-ray",
+  BluRay: "Blu-Ray",
 };
+export default MOVIE_FORMAT_TYPES;

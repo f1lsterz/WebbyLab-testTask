@@ -1,6 +1,6 @@
 import { DataTypes } from "sequelize";
 import { sequelize } from "../db/dbConfig.js";
-import { MOVIE_FORMAT_TYPES } from "../utils/movieFormatType.js";
+import MOVIE_FORMAT_TYPES from "../utils/movieFormatType.js";
 
 export const Movie = sequelize.define("Movies", {
   id: {
